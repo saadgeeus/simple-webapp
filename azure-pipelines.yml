@@ -1,0 +1,70 @@
+# azure-pipelines.yml
+# CI + CD for Node.js 20 app on Azure Web App (Linux)
+
+trigger:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  azureSubscription: 'Azure-DevOps-Service-Connection'
+  azureWebAppName: 'webapp-devops-demo1234'
+  nodeVersion: '20.x'
+  packageZip: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+
+steps:
+# 1. Checkout GitHub Repo
+- checkout: self
+  clean: true
+  fetchDepth: 1
+
+# 2. Setup Node.js
+- task: NodeTool@0
+  displayName: 'Use Node $(nodeVersion)'
+  inputs:
+    versionSpec: '$(nodeVersion)'
+
+# 3. Install Dependencies
+- script: npm ci
+  displayName: 'Install dependencies'
+
+# 4. Optional Build Step (if app has build)
+# - script: npm run build
+#   displayName: 'Build app'
+
+# 5. Create ZIP Package for Deployment
+- task: ArchiveFiles@2
+  displayName: 'Archive project'
+  inputs:
+    rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
+    includeRootFolder: false
+    archiveType: 'zip'
+    archiveFile: '$(packageZip)'
+    replaceExistingArchive: true
+
+# 6. Deploy to Azure Web App (Linux)
+- task: AzureWebApp@1
+  displayName: 'Deploy to Azure Web App'
+  inputs:
+    azureSubscription: '$(azureSubscription)'
+    appType: 'webAppLinux'
+    appName: '$(azureWebAppName)'
+    package: '$(packageZip)'
+
+# 7. Verify Deployment (optional)
+- task: AzureCLI@2
+  displayName: 'Verify App (HTTP Check)'
+  inputs:
+    azureSubscription: '$(azureSubscription)'
+    scriptType: bash
+    scriptLocation: inlineScript
+    inlineScript: |
+      echo "Checking site: https://${azureWebAppName}.azurewebsites.net"
+      STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://${azureWebAppName}.azurewebsites.net)
+      echo "HTTP Status: $STATUS"
+      if [ "$STATUS" != "200" ] && [ "$STATUS" != "301" ] && [ "$STATUS" != "302" ]; then
+        echo "⚠ Warning: The app did not return a valid status. Check logs."
+      fi
