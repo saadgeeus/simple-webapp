@@ -37,14 +37,11 @@ stages:
         npm install
       displayName: "Install dependencies"
 
-    # (Optional) Only use if frontend build exists
-    # - script: npm run build
-    #   displayName: "Build project"
-
+    # ZIPPING FIXED (IMPORTANT)
     - task: ArchiveFiles@2
       displayName: "Create ZIP package"
       inputs:
-        rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
+        rootFolderOrFile: '$(Build.SourcesDirectory)'   # 👈 FIXED
         includeRootFolder: false
         archiveType: zip
         archiveFile: '$(Build.ArtifactStagingDirectory)/app.zip'
