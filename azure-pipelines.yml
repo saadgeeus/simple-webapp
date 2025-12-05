@@ -11,7 +11,7 @@ pool:
 
 variables:
   azureSubscription: 'Azure-DevOps-Service-Connection'
-  azureWebAppName: 'webapp-devops-demo1234'
+  azureWebAppName: 'nodejs-devops-demo-webapp'
   nodeVersion: '20.x'
   packageZip: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
 
